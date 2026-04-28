@@ -1983,20 +1983,11 @@ async function clone({ url, outputDir, projectName, multiPage, minify, beautify:
 
 const browser = await puppeteer.launch({
   headless: "new",
-
-  // 🔥 VERY IMPORTANT FOR RENDER
-  executablePath:
-    process.env.PUPPETEER_EXECUTABLE_PATH ||
-    process.env.CHROME_PATH ||
-    undefined,
-
   args: [
     "--no-sandbox",
     "--disable-setuid-sandbox",
     "--disable-dev-shm-usage",
-    "--disable-gpu",
-    "--single-process",
-    "--no-zygote"
+    "--disable-gpu"
   ]
 });
 
