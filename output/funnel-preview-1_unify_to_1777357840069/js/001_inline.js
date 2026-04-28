@@ -1,0 +1,1 @@
+var SITE_BASE_URL = '.';

@@ -1,0 +1,1 @@
+window.TrackierWebSDK.init();

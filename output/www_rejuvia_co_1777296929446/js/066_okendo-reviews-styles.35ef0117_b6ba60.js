@@ -1,0 +1,5 @@
+(window["wpJsonpOkeReviews"] = window["wpJsonpOkeReviews"] || []).push([
+  ["okendo-reviews-styles"], {
+    "2fb4": function(e, w, s) {}
+  }
+]);

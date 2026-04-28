@@ -1,0 +1,1 @@
+window.swiperBundleUrl = "//herfantasybox.com/cdn/shop/t/260/assets/swiper-bundle.min.js?v=149396710496725026341749762317";

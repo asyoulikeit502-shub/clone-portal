@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html ng-app="73da550b-6eec-4247-80f2-92e13f0fc552" ng-controller="LandingOfferPageCtrl" class="ng-scope">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Meridian Marketing</title>
+  <link rel="shortcut icon" type="image/x-icon" href="images/favicon.png">
+  <meta name="viewport" content="width=divice-width, initial-scale=1.0">
+  <script src="js/001_inline.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body ng-controller="allProductData" class="ng-scope">
+  <header class="header_sec sticky-top bg-white shadow ng-scope" ng-controller="allProductData">
+    <div class="menu_sec py-xxl-2">
+      <nav class="navbar navbar-expand-lg py-3 py-lg-4">
+        <div class="container-xl">
+          <div class="menu_wrap d-flex justify-content-between align-items-center gap-5 w-100">
+            <div class="logo_sec">
+              <a href="./" class="navbar-brand me-2 me-xl-3"><img src="images/logo_cc85f1.png" class="mw-100"></a>
+            </div>
+            <div class="collapse navbar-collapse justify-content-between" id="main_nav_toggle">
+              <ul class="navbar-nav main_nav align-items-start align-items-lg-center ">
+                <li class="nav-item">
+                  <a class="nav-link" aria-current="page" href="./">Home</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="reward-product?page=118&amp;img=mem-img.jpg">Rewards</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="shop">Products </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="contact">Contact Us</a>
+                </li>
+              </ul>
+            </div>
+            <div class="menu_btn_wrap d-flex align-items-center gap-4">
+              <button class="navbar-toggler ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#main_nav_toggle" aria-controls="main_nav_toggle" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="fa fa-bars text-black fs-2"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </div>
+  </header>
+  <div class="alert alert-success" id="success-alert" style="z-index:0; !important">
+    <button type="button" class="close" id="close-alert">x</button>
+    <strong>Success! </strong> Product has been successfully added to your Cart.
+  </div>
+  <section class="hero_sec">
+    <div class="container-xl">
+      <div class="row">
+        <div class="col-lg-6 col-md-7 col-12">
+          <div class="hero_text text-center text-md-start ps-xxl-5">
+            <h1 class="text-capitalize mb-3 mb-xxl-4">Learn Through <br> Imaginative Play</h1>
+            <p class="px-5 ps-md-0 pe-lg-5 mb-0">Our collection of children's toys is designed to spark creativity, build essential skills, and provide opportunities to learn through play.</p>
+            <a href="shop" class="theme_btn pulse-button mt-4 mt-xl-5">Explore our toys</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="category_sec ng-scope" ng-controller="allProductData">
+    <div class="container-xl">
+      <h2 class="sec_title text-center pb-xxl-4 mb-5">Our Collections</h2>
+      <div class="row justify-content-evenly">
+        <div class="col-xl-2 col-lg-3 col-md-3 col-sm-4 col-12">
+          <div class="category_box mb-4 mb-sm-0">
+            <div class="cat_img d-flex justify-content-center align-items-center mb-4">
+              <img loading="lazy" src="images/cat_img1_c71015.png" class="object-fit-contain">
+            </div>
+            <div class="cat_details text-center">
+              <h4 class="mb-3 mb-sm-4">Just for kids</h4>
+              <a href="shop?category=Justforkids" class="theme_btn w-100">Explore now</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-2 col-lg-3 col-md-3 col-sm-4 col-12">
+          <div class="category_box mb-4 mb-sm-0">
+            <div class="cat_img d-flex justify-content-center align-items-center mb-4">
+              <img loading="lazy" src="images/cat_img2_584ea6.png" class="object-fit-contain">
+            </div>
+            <div class="cat_details text-center">
+              <h4 class="mb-3 mb-sm-4">Learn Through Fun</h4>
+              <a href="shop?category=LearnThroughFun" class="theme_btn w-100">Explore now</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-2 col-lg-3 col-md-3 col-sm-4 col-12">
+          <div class="category_box mb-4 mb-sm-0">
+            <div class="cat_img d-flex justify-content-center align-items-center mb-4">
+              <img loading="lazy" src="images/cat_img3_b6a7a4.png" class="object-fit-contain">
+            </div>
+            <div class="cat_details text-center">
+              <h4 class="mb-3 mb-sm-4">Move &amp; Play</h4>
+              <a href="shop?category=MovePlay" class="theme_btn w-100">Explore now</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="featured_sec pt-0 pt-md-4 pt-xxl-5 ng-scope" ng-controller="allProductData">
+    <div class="container-xl">
+      <h2 class="sec_title text-center mb-4 pb-3">Featured Products</h2>
+      <div class="row mx-xl-4 mx-xxl-5 g-2 g-md-3">
+        <div class="col-lg-3 col-md-6 col-sm-6 col-6">
+          <div class="featured_box position-relative p-3 p-xxl-4">
+            <div class="featured_img">
+              <img loading="lazy" src="images/featured_img1_65127e.png" class="w-100 h-100 object-fit-contain">
+            </div>
+            <div class="featured_text mt-4">
+              <h5 class="px-2">$39.99</h5>
+              <h4 class="px-2">3DoodlePro</h4>
+              <div class="btn_wrap d-flex flex-column align-items-center gap-2 mt-3">
+                <a href="checkout?product=3doodlepro" class="learn_text_btn"><span class="text-decoration-underline">Learn More</span> <img src="images/learn_btn_icon_7779cd.png"></a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-6 col-6">
+          <div class="featured_box position-relative p-3 p-xxl-4">
+            <div class="featured_img">
+              <img loading="lazy" src="images/featured_img2_8f081a.png" class="w-100 h-100 object-fit-contain">
+            </div>
+            <div class="featured_text mt-4">
+              <h5 class="px-2">$39.99</h5>
+              <h4 class="px-2">Tiny Tunes Pro</h4>
+              <div class="btn_wrap d-flex flex-column align-items-center gap-2 mt-3">
+                <a href="checkout?product=tinytunespro" class="learn_text_btn"><span class="text-decoration-underline">Learn More</span> <img src="images/learn_btn_icon_7779cd.png"></a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-6 col-6">
+          <div class="featured_box position-relative p-3 p-xxl-4">
+            <div class="featured_img">
+              <img loading="lazy" src="images/featured_img3_9ae618.png" class="w-100 h-100 object-fit-contain">
+            </div>
+            <div class="featured_text mt-4">
+              <h5 class="px-2">$</h5>
+              <h4 class="px-2">CrabbiCrawler</h4>
+              <div class="btn_wrap d-flex flex-column align-items-center gap-2 mt-3">
+                <a href="checkout?product=crabbicrawler" class="learn_text_btn"><span class="text-decoration-underline">Learn More</span> <img src="images/learn_btn_icon_7779cd.png"></a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-6 col-6">
+          <div class="featured_box position-relative p-3 p-xxl-4">
+            <div class="featured_img">
+              <img loading="lazy" src="images/featured_img4_e5a192.png" class="w-100 h-100 object-fit-contain">
+            </div>
+            <div class="featured_text mt-4">
+              <h5 class="px-2">$</h5>
+              <h4 class="px-2">Black Falcon Drone</h4>
+              <div class="btn_wrap d-flex flex-column align-items-center gap-2 mt-3">
+                <a href="checkout?product=blackfalcondrone" class="learn_text_btn"><span class="text-decoration-underline">Learn More</span> <img src="images/learn_btn_icon_7779cd.png"></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-12">
+          <div class="btn_wrap text-center mt-5">
+            <a href="shop" class="theme_btn pulse-button">View All Products</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="cta_sec my-xxl-5">
+    <div class="container-xl">
+      <div class="cta_box position-relative overflow-hidden rounded-3">
+        <div class="row flex-column-reverse flex-md-row justify-content-evenly align-items-lg-center g-0">
+          <div class="col-lg-6 col-md-6 col-12 ms-xl-4 ms-xxl-5">
+            <div class="cta_img h-100">
+              <img src="images/cta_img_1ffd5d.jpg" class="w-100 h-100 object-fit-cover">
+            </div>
+          </div>
+          <div class="col-lg-5 col-md-6 col-12">
+            <div class="cta_text p-4 p-lg-3 p-xxl-4 h-100">
+              <h3 class="mb-2">Toys That Nurture <br> Learning &amp; Creativity</h3>
+              <p class="mb-3 mb-xl-4">Encourage hands-on exploration with toys designed to promote problem-solving, motor skills, and imagination. Without the need for screens.</p>
+              <a href="shop" class="cta_btn">Explore Now</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="index-rwrd-bnnr">
+    <div class="container">
+      <div class="row justify-content-center align-items-center">
+        <div class="col-lg-8 col-md-8 col-sm-12 text-center cta_text" style="margin-left:auto;">
+          <h3 class="mb-2">Get More with Every Purchase</h3>
+          <p class="mb-4">Join Our Membership Rewards Program for Monthly Benefits Starting at <b> $4.99</b>. </p>
+          <a href="reward-product?page=118&amp;img=mem-img.jpg" class="theme_btn pulse-button  align-items-center justify-content-center">More Info <i class="fa-solid fa-arrow-right-long"></i></a>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="faq_sec">
+    <div class="container-xl">
+      <div class="row flex-column-reverse flex-lg-row">
+        <div class="col-lg-4 col-md-12 col-12">
+          <div class="faq_wrap d-flex justify-content-between flex-column h-100">
+            <h2 class="faq_tilte d-none d-lg-block mb-0">Faqs</h2>
+            <div class="faq_bottom d-flex flex-column-reverse flex-lg-column">
+              <img src="images/faq_img_e016d6.png" class="faq_img w-100 mt-5 mt-lg-0 mb-lg-5">
+              <div class="faq_text text-center text-lg-start">
+                <h3 class="mb-3">Still have questions?</h3>
+                <p class="w-75 mb-4 pb-xxl-2">We're here to help. If you need more information or personalized support, feel free to contact our team—we'll make sure you get the answers you need.</p>
+                <a href="contact" class="theme_btn">Contact US</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-8 col-md-12 col-12">
+          <h2 class="faq_tilte text-center mb-4 d-lg-none">Faqs</h2>
+          <div class="accordion accordion-flush faq_accordion d-flex flex-column mb-5 mb-lg-0 h-100" id="faqAccordion">
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne"> What is your warranty? </button>
+              </h2>
+              <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                <div class="accordion-body pt-0">
+                  <p>We offer a 30-day limited warranty on all products, covering manufacturing defects only. To initiate a claim, please contact <a href="contact">customer support</a> within the warranty period. Warranty claims are subject to verification and approval.</p>
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo"> How is shipping handled? </button>
+              </h2>
+              <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body pt-0">
+                  <p>Orders are typically processed within 1–2 business days. Shipping is fulfilled via third-party carriers. Once your order has shipped, you will receive a confirmation email containing tracking information.</p>
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree"> What are the shipping options available? </button>
+              </h2>
+              <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body pt-0">
+                  <p>Available shipping options may include Standard, Expedited, and Express services. Shipping methods, carriers, and associated costs are displayed at checkout and may vary depending on your delivery address.</p>
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour"> How long does shipping typically take? </button>
+              </h2>
+              <div id="collapseFour" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body pt-0">
+                  <p>Standard shipping usually takes 5–8 business days. Expedited options may arrive in 2–3 business days, depending on your location. Please note: delivery times may vary during peak seasons.</p>
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive"> Can I change or cancel my order after placing it? </button>
+              </h2>
+              <div id="collapseFive" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body pt-0">
+                  <p>Order modifications or cancellations may be possible if the order has not yet been processed or shipped. To request a change, please contact customer service immediately. Once an order is in transit, changes cannot be made.</p>
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix"> What are the shipping costs? </button>
+              </h2>
+              <div id="collapseSix" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body pt-0">
+                  <p>Shipping costs are calculated at checkout based on the selected shipping method, delivery destination, and the weight or volume of the order. Final shipping fees will be displayed prior to order confirmation. Rates are subject to change without prior notice.</p>
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSeven" aria-expanded="false" aria-controls="collapseSeven"> Can shipping be tracked? </button>
+              </h2>
+              <div id="collapseSeven" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body pt-0">
+                  <p>Yes. Once your order has been dispatched, a tracking number will be sent via email. Tracking availability and accuracy are subject to the policies of the third-party carrier.</p>
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEight" aria-expanded="false" aria-controls="collapseEight"> What happens if my package is lost? </button>
+              </h2>
+              <div id="collapseEight" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body pt-0">
+                  <p>If your package is lost in transit or marked as delivered but you haven't received it, please contact us immediately. We'll investigate with the carrier and offer a replacement or refund where appropriate.</p>
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNine" aria-expanded="false" aria-controls="collapseNine"> Are there any restrictions on shipping certain items? </button>
+              </h2>
+              <div id="collapseNine" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body pt-0">
+                  <p>Some items may be restricted from shipping based on your location, carrier rules, or customs regulations. Any applicable limitations will be shown at checkout or communicated before your order is confirmed.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="best_sec">
+    <div class="container-xl">
+      <div class="row gy-3 gy-md-0">
+        <div class="col-md-6 col-12">
+          <div class="best_box position-relative overflow-hidden rounded-4 h-100">
+            <img src="images/best_bg1_b1baa7.jpg" class="best_img w-100 h-100 object-fit-cover">
+            <div class="best_text position-absolute top-0 start-0 ps-4 ps-lg-5 ms-xl-3 pt-4 mt-xl-3 text-center">
+              <h3>Portable <br> Karaoke</h3>
+              <a href="shop" class="cta_btn">Explore Now</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-12">
+          <div class="best_box position-relative overflow-hidden rounded-4 h-100">
+            <img src="images/best_bg2_587fd2.jpg" class="best_img w-100 h-100 object-fit-cover">
+            <div class="best_text position-absolute top-0 end-0 pe-4 pe-lg-5 me-xl-3 pt-4 mt-xl-3 text-center">
+              <h3>Crawling <br> Crab Toy</h3>
+              <a href="shop" class="cta_btn">Explore Now</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="why_sec pb-5 mb-md-4 mb-xxl-5">
+    <div class="container-xl">
+      <h2 class="sec_title text-center lh-1 mb-4 pb-2">why choose us</h2>
+      <div class="row justify-content-between g-0">
+        <div class="col-md-4 col-12">
+          <div class="why_box py-3 py-xxl-4 px-4 px-md-0 px-lg-3 px-xxl-5">
+            <div class="why_icon mx-auto mb-4">
+              <img src="images/why_icon1_22632b.png" class="w-100">
+            </div>
+            <div class="why_text text-center">
+              <h4 class="pb-xl-2 mb-2">Thoughtfully Curated Products</h4>
+              <p class="px-5 px-md-4 px-xl-5 mb-0">Every item is handpicked to simplify life, support everyday routines, and meet real needs.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 col-12">
+          <div class="why_box py-3 py-xxl-4 px-4 px-md-0 px-lg-3 px-xxl-5">
+            <div class="why_icon mx-auto mb-4">
+              <img src="images/why_icon2_e3d3d9.png" class="w-100">
+            </div>
+            <div class="why_text text-center">
+              <h4 class="pb-xl-2 mb-2">Streamlined Living Starts Here</h4>
+              <p class="px-5 px-md-4 px-xl-5 mb-0">Our essentials help declutter your day and make home life more efficient.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 col-12">
+          <div class="why_box py-3 py-xxl-4 px-4 px-md-0 px-lg-3 px-xxl-5">
+            <div class="why_icon mx-auto mb-4">
+              <img src="images/why_icon3_d21738.png" class="w-100">
+            </div>
+            <div class="why_text text-center">
+              <h4 class="pb-xl-2 mb-2">Customer-Centered Support</h4>
+              <p class="px-5 px-md-4 px-xl-5 mb-0">Questions? Concerns? Our team is here to help with real answers and fast support.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div class="container">
+    <div class="cncl-rht-bx mt-5 mb-5">
+      <h4 class="cancel_title text-center mb-3 mb-xxl-5">My easy cancel</h4>
+      <div class="cancel_form ng-scope" ng-controller="OrderCancellationCtrl2" id="cancellation">
+        <form id="sendMessage" name="sendMessage" ng-submit="CancellationFormSubmitHandler2();" class="ng-pristine ng-valid ng-valid-email">
+          <span ng-init="successMessage='You will receive an email within the next 24-48 hours to confirm your program changes. Please note that changes will not be applied until they are verified. For any additional questions, please call customer service at +1 (866) 673-3146 or email us at support@buymeridian.co for further assistance'"></span>
+          <div class="form-group mb-3 mb-xxl-4 align-items-center">
+            <input type="email" id="order_email" class="form-control ng-pristine ng-untouched ng-valid ng-valid-email" ng-model="CancellationFormData.order_email" placeholder="Email Address" name="email" ng-init="CancellationFormData.order_email=''">
+            <span id="emailerror" hidden="">Please enter the email</span>
+          </div>
+          <div class="reward-hiddenselect form-group mb-3 mb-xxl-4 align-items-center ng-hide" id="modify_select" ng-show="CancellationFormData.reason === 'Modify'">
+            <label for="form-subject" class="mb-2">Select Program</label>
+            <div class="reward-hiddenselect-1">
+              <select id="program" class="form-select ng-pristine ng-untouched ng-valid" name="program" ng-model="CancellationFormData.program" ng-init="CancellationFormData.program='21'">
+                <option value="">Please Select</option>
+                <option value="21">Tiny Treasures</option>
+                <option value="22">Toy Box</option>
+                <option value="23">Adventure Set</option>
+                <option value="24">Wonder World</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group mb-4 mb-xxl-4 mt-5 rqst-sec">
+            <label for="request_type" class="mb-3">Request Type</label>
+            <div class="request_options d-flex flex-column flex-lg-row flex-grow-1 gap-2 gap-lg-4 ng-pristine ng-untouched ng-valid" ng-model="CancellationFormData.reason">
+              <div class="form-check form-check-inline request_radio position-relative p-0 m-0" style="cursor: pointer;">
+                <label class="rounded-pill" for="modify_program"><input class="btn-check ng-pristine ng-untouched ng-valid" type="radio" name="request_type" id="modify_program" value="Modify" ng-model="CancellationFormData.reason">   Modify Program</label>
+              </div>
+              <div class="form-check form-check-inline request_radio position-relative p-0 m-0" style="cursor: pointer;">
+                <label class="rounded-pill" for="cancel_program"><input class="btn-check ng-pristine ng-untouched ng-valid" type="radio" name="request_type" id="cancel_program" value="Cancel" checked="" ng-model="CancellationFormData.reason" "="">
+                                          Cancel Program</label>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class=" btn_wrap text-center mt-4">
+                  <button type="submit" class="more_btn border-0">Get Help Now</button>
+              </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script src="js/002_inline.js"></script>
+  <script type="text/javascript" src="js/003_angular.min_ba4898.js"></script>
+  <script type="text/javascript" src="js/004_jquery.min_297c23.js"></script>
+  <script type="text/javascript" src="js/005_app_6ac670.js"></script>
+  <script src="js/006_cart_83cb2d.js"></script>
+  <div ng-include="'./frontend/storage/modal.html'" class="ng-scope">
+    <div class="hide error_handler_overlay ng-scope" ng-click="modalHide($event);">
+      <div class="error_handler_body">
+        <a href="javascript:void(0);" class="error_handler_overlay_close" ng-click="modalHide($event);">×</a>
+        <div class="error_handler_body_content error_handler_body_content_error hide">
+        </div>
+        <div class="error_handler_body_content error_handler_body_content_iframe hide">
+          <iframe></iframe>
+          <img class="iframeLoader" src="data:image/gif;base64,R0lGODlhIAAgAPYAAP///wAAAPr6+uLi4tLS0tTU1O7u7vz8/Pb29ri4uGxsbERERE5OToiIiNbW1vT09MbGxkxMTAQEBB4eHuDg4Orq6p6enqampvLy8oqKihoaGjY2Nrq6ut7e3tra2np6ejw8PCgoKCwsLKioqHZ2dg4ODiIiIqqqqlZWVuzs7IaGhiAgIAwMDKysrBwcHMjIyBYWFgoKCiYmJoSEhMLCwj4+PhISEnR0dJKSkpCQkBgYGIyMjLa2tjAwMLy8vJSUlEJCQtjY2KSkpMDAwMrKyszMzFpaWiQkJI6Ojn5+fnJycoCAgAgICL6+vq6urnx8fJaWlmhoaGpqarS0tNzc3GBgYLKysrCwsHh4eM7OzoKCglhYWDIyMsTExOTk5Pj4+PDw8Obm5ioqKmJiYl5eXujo6HBwcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH+FU1hZGUgYnkgQWpheExvYWQuaW5mbwAh+QQACgAAACH/C05FVFNDQVBFMi4wAwEAAAAsAAAAACAAIAAAB/+AAIKDhIWGh4iJiouMjY0HhggpAo6GKQQ0BSmDAhwzBJWEHioMNQwNQZAIOUAJoYIVHysStCYfFQcHDjwVhRUdD4kCCSC0xhsJkAC5hClLRk4IiA8WIca1FtKHBBslCgaICBci1xIhJ5SHFc/RiAcEDCzXDETK6h7BiQYjCxo2LguEYHhV6AAGDy1UkNjhAxzBQQggZCCRgcMAA+kcMeOUIIKGEgBfvHJgwQKFQQMUlLuRr1GFJxNM7HBIYEG5Bb0cUTBCS0HOAgzKMcjZCAOUGgtGDARgoMEEYy5wZGxkgAgRh8scKNhgYgOJkw8LUuBwIoEDjGEPPXhhIQcve4mYNrqDgELGBBA/NsUlYoHGUnUkYBgDMiQuhxouNmRD1AFFDGMhRihDgEEbUxIlaEWhgqiCgsy0QPgAIKAIkiQncmJQAYNJCSlEC3bUoKPHjAG6jMAo0cMCuHdGahiZMrXQgwQzPljocECcDGNGPAg64KFJAcuIBFSokA+BkCO0SkQnBDcUAd28LfxNS5rGDCUm2RcSYIC7o0AAIfkEAAoAAQAsAAAAACAAIAAAB/+AAIKDhIMHFVRUKQeFjY6ODxBJKChLLw+PmY0CNEYaEhIaRhACmqYAFUsToKATSRWnhQYOBBUCQUZMrKBGQbGCBw4NKAxYTURGuxIlvb8AAySrEjooTknSoC6vghUVjI8CPBu7Exk8KDCgNltDpalJA5kIQiHKJBVFWgwMMwQI3FGiOMgkwMo4VityYEKQIgWCbwBuBSmViYKSTxJgMIDgTN6LJwwiKEiAoWMjDAWGEAlCoNY/k4QwODGyAIUFWzALHRgSoQSoDScgxkIAwQIBig9+YCtBApOzDkZCKIAF4AGOpU07eogig0Q8AAea9JTAYkMLoacQdDFKEYABJ1Wcat7MiRYAyiEEDOTUJOCAAAwP6u51ywEJFH+nHjjke2XBiiNRsggelMICiRElH1VQkE7CEShOHR2w0qNEjSYVo7CagCRzxLZgR5iQwGVKJgw4RDCBsSBBqQMFhAgp0LaDkghLvmrGEUXKFb0APEgxsSIKFUIVapk6gIECTrA8eoDqwWOyySEgQIEYYr5jhRwhc1AdjL1Ikfn0BwcCACH5BAAKAAIALAAAAAAgACAAAAf/gACCg4SFAAeGiYqJBxVFXUEPi5OGBw5LCzVGIxWUngAUTysSEiVALZIHDxgIng8DBQMIAj5ATKQSOh8DGEQWOCcOAosYTgpbCjwVLVy4pVEEJ1siJhsKL1+JtAslJToMCU0Rzi5PFxEluC4KVIkGDTq4JjlBKkekLBFOGSbOEgscEBVKkQQGLg0ZDFSwYITBhy4VlsRztqHFsEIITnCJIYEJCCeIDijEAOABlHu4WADxcbFQBRULekTIMUBRFxQ25H3ooAhBhSYthlQQaAjDFSM9Qmy4QaSVIQQYQhLtWcCJEB4UpgrCQECIkAItPSGYpa3JlhAyjED4VEhVtkEGtVRoIKVBi1O2ADxAcWJgUAUS6UopuMuWBopdgxBY4NJtg4WwnypwaEqoAg4jRizUxDvpQAoPDjpxHk3aEwYDWksPOkAAyRIfkiilIOAlNaEOUTTAAAi50IMcNZRQmARhAykTUGIrSqEARoQik4JsgVHi490HFIYOEnBFChTRih44iZJ5MwAMI6IkIUDUJ0lKCCgE6TvIwbgjOd6rJlSAQYkjOOi3nyAGXKAeewMWgkF2hCVIWiAAIfkEAAoAAwAsAAAAACAAIAAAB/+AAIKDhIUHAgeFiouMggYEU00UiY2VhQ8XWxtASwSUlpUHRAwlEhJiGRWgighgCIIILWKmEiVRDgIVRRBBD5YDLRkXQQIITiK0tgUEKgwLUS0pjRUqGxo9SR0HHmMwtRsWL1hHpiURU6+LRQu0NQkACE0KCwwWHjw1tBIaSaqLLzWYmNpgRdCBCh0oPBDQooc+Wx4YVVBgooSJKAQYNVlQypSJGf4UHXihwsiSJr4WDdDSI4YEGCg4pFt00EGFmYoEOMhhhIECIUFS4Fy1CEOQLldwLMlwZcAnMB0GDLV0AIKCHi5MAEHibwCOLUZaGCAKoAIJF/o2XAAgYAqIlwy1MhIlkE8fDAXwLIQY6IMsAYcPyQA4QAPFhCMKgpANEoGFPh1JBKXg0QAHkamNHuRoaQoGgyGDEKQw8Imohx0LemyIcmUsWUYHuziZQgDDa1AHSiuqUCCMbkaIQHVYskCBJ0tBkCTAPOjAFS6nLKRslGCBCtewfUTQAeTKTAEpbBMCRkSApRQtSAgJKeBFAwshBQUHhaDCg08GVByJ0OX37UEPWFADRv9VQgEHL4hXIHD+LVhgIAAh+QQACgAEACwAAAAAIAAgAAAH/4AAgoOEhYaHiIkAGEFEQQ+KkYUPPFERCjwYkpIHBUYwEjBRRQeDpZsID6cHPhsSr0A8AgAIHUVBmokHDhcWRJAHLxElEiUMXQIGCQoMUSMViR1YPTJREKUVP0BiCxYVCENbOqELVpCHQzWvPRbnFRwWTdAYPzKvEisz0IYHRMMSG06cE3QKgIEcR+65eDIAUQoLKCI06FCwEAIeC0owKQFCSC5+FYjQGFDRUAULDDZE2EFR0YGShwRUeGGFB4EBGGBuAplgxxILBBAUerlzEIIWKExoEKGAwKkHRCxY2bezgxFir0xkSAFglwIxIC4MlAShx71iRjp0hbBAggsVXMh3EnF1r0QUKoI8JKnBYIrQnQOijHslBkkuAR18vDBQlFaCKlxCgEhSoOABAToRHTAQBEILKD9aBJnVmBACAjmioFBgwUHO0oWCYBHxCsYCIXEPHejwwktmBBY2MLknigBpQx0+LEBCtZABLYPvgbByvBCBLRMUqD2UYkn0VzWmVCdU4cKNTIQEvAbO5awOI6QSPfiW/gVQQUGe9LBRQkME3KU9AJETpQhQAA5RGKHACc3tJIB9DphSgQMFUPBRaQKoAtuGHHYYCAAh+QQACgAFACwAAAAAIAAgAAAH/4AAgoOEhYaHiImCBw9fio+HGC9CUxQCkJgHXUY9QDkDmJAPUCYSJVtEB4MHqpAHl4MPFjKmRgSqBxQvRBWtiAZdV0GwAkVmIAwWFQAHBEoLETNBvoUCCVsgSR6DCA5TEL0AKUi0EhtCGIgYDRMSCz7UhRQKJRISK1rLhwgtET0KtxJVaFCKBRdlAq9Y6PJAEQIIUjbUwEIA1qEDCDBYTPSAwBUeDhqGysTqwYONIxEhCHLlxAsDhA5gqIAgJQABEKJw6ZEMJrMKQmY0ERlqwJN2plBAEIRgCAoZH0CNJICinr0eJwYRUBABir5QQaJYZQKCB7cCXaSOTCEEiA4YIsk+dCgUz9UDDxaiRNlRpKbNQQIG+BjRogsBAhVQpjwQJMOCHiBuMHxUt1AKCxvsSQiRZK5AHgT8AgBTYNeALwWiwNAsIcKQyjeHMMhQhhmFHwy4gFCQoElV1guawGaMZAqGAxUwa55g5MKNFZphRCGg6ECKhjh/a5aRoUWVIzomRLiQIpQAHjVYS4CBxcGQHQqSTPkKSUCTCExY65hBs0KHCumkFIQSLmgWAwgtEPUXAA80YYQJJcAAggqeLRjLCxlEocQFHShWSCAAIfkEAAoABgAsAAAAACAAIAAAB/+AAIKDhIWGh4iJiouMAhUdKQeMk4IFGQoWFZSMCBYbGigQkpuJnSIlCzSjABgUFA+MGGGwgwRJRlCaghUWUgpOKYoGV1o8GIMIFAUVAoIHXQwwLkZEzYgERkcKQYoPIyESEjU8CIkDKhFIA4rPDC4mUUWrhgIOHEHWiQZOJE/GiwcEzEv0gMIAWqQSKuw2gIKBgQAgTqogJEqUHx5WPXAAQdemB06AwJCwAYqBQQN2RGkiMVGFDC7ClYhCZVCKEzsItERk4Ac4CS6UeGRVoRypAy+i9BCBosUxQwF3GnoA4UcOHkMFCaDgY8QVAicXCRCAIEUFhIPqqVjAZUOUK2HRD6UokqBjywpIepQIp8EIjXyEKowwUoNBjg4QD9BAEa5xiBwVDoDxUhQAAg4RRpbYYCFYIQRTasRoLEEDFgc0VBjBFKQClJ8SdCjpAHUIA9ISViyZYsREiRJcVBCx0KPxhA+0DXl4YoKJzAUWMsggvaAFByMuSsAAMiIuIQRDonCZECIClCEkdJAWYWHAFCkojFigkAjD8Bk5priasYL0hhYIYEBAFwRExg4GFaRQzgM8LLBXblIQMEhAC6VgwRYb1KDAEGgtJIh9V3DQgVGKBAIAIfkEAAoABwAsAAAAACAAIAAAB/+AAIKDhIWGh4iJiouMAAdfB42SAA8EPh2Rk4tBTyhQFZqLRCghHwOEDwYPjY+ZghUWTzwYgxUtDS2gigIdPgOuAikUtIICQwwmDAkIigYWWy3EiAhOXBIbF6uJD007RMyJBwUKESQErogYFdqKCJYE7IUHAggCB+i79ukOPlZdFAJCHXowBEsEICh2eMC36AAGDAEBCCASZYUECSVE5NDVyJ2FHD5ApbDQ46LJCEQYIgqCRcSRLRwQDPjgwuRFLhxUGjowZMFFMT8MVGhgwqYEEE0iNiRgREcJEEIePLgSoYRJGAoWskoxIgqKDA7udUBSYwIMGQymSGtUgUiXDuDgeJ1QgUWFBR8FKihldM/QgwoFTnzYEgUHgb2FBFTooDcRghdRjpSAwUVLh2lEdijI8A1RChxHbAKZAo7QAQdYJB9RUEBlhSc6bIqwUCFFEAJUVgnw4fPiAh6lCVXIUPQikw0jglyQguJDEwwIhlTFuMBH8EEIODDQwUTC6iYjFsCQYCLKiwcdVGwwsWGJ1kO2okRgQIIDAZomuVgwgKCAhSUWEHCdaRUQwEETDtimRGwX9QCFAQAgUAEFjS0iwIWRwNJDdyVEwEM8AkVYwBJAcMGABRSEaAgvV1wQkk6EBAIAOwAAAAAAAAAAAA==">
+        </div>
+      </div>
+    </div>
+    <div class="dom_manipulator ng-scope"></div>
+  </div>
+  <footer class="footer_sec">
+    <div class="container-xl">
+      <div class="row justify-content-between">
+        <div class="col-xxl-3 col-xl-3 col-lg-4 col-md-5 col-12">
+          <div class="footer_links h-100">
+            <div class="footer_logo text-center text-md-start pb-md-2 mb-4">
+              <img src="images/logo_cc85f1.png" class="mw-100">
+            </div>
+            <div class="footer_card py-3 d-none d-md-block">
+              <h4>Accepted Payments</h4>
+              <img src="images/card_112b46.png">
+            </div>
+            <div class="footer_card py-3 d-none d-md-block">
+              <h4>Shipping methods</h4>
+              <img src="images/ship_d78562.png">
+            </div>
+          </div>
+        </div>
+        <div class="col-xxl-8 col-xl-9 col-lg-8 col-md-7 col-12">
+          <div class="footer_right d-flex flex-column justify-content-between h-100">
+            <div class="footer_contact pb-4 pb-md-0">
+              <div class="row mb-2">
+                <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-6 order-4 order-md-1">
+                  <div class="footer_links mt-4 mt-md-0">
+                    <h4 class="mb-4">Legal &amp; Benefits</h4>
+                    <ul class="list-unstyled mb-0">
+                      <li><a href="terms">Terms &amp; Conditions</a></li>
+                      <li><a href="privacy">Privacy Policy</a></li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-6 order-3 order-md-2">
+                  <div class="footer_links mt-4 mt-md-0">
+                    <h4 class="mb-4">Customer Support</h4>
+                    <ul class="list-unstyled mb-0">
+                      <li><a href="return">Return policy</a></li>
+                      <li><a href="shipping">Shipping policy</a></li>
+                      <li><a href="billing">Billing Information</a></li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-6 order-1 order-md-3">
+                  <div class="footer_links mt-4 mt-xl-0">
+                    <h4 class="mb-4">Where can you find us?</h4>
+                    <ul class="list-unstyled mb-0">
+                      <li class="d-flex align-items-start gap-2">
+                        <i class="fa-solid fa-location-dot" style="margin-top:8px;"></i>
+                        <p><span class="d-block fw-bold">Company Address</span> 61 Skylar Cir<br> Media PA 19063,<br> USA</p>
+                      </li>
+                      <li class="d-flex align-items-start gap-2 mb-3">
+                        <i class="fa-solid fa-location-dot" style="margin-top:8px;"></i>
+                        <p><span class="d-block fw-bold">Return Address</span> 841 Fairmount Ave<br> Elizabeth, NJ 07201,<br> USA</p>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-6 order-2 order-md-4">
+                  <div class="footer_links mt-4 mt-xl-0">
+                    <h4 class="mb-4">How to contact us?</h4>
+                    <ul class="list-unstyled mb-0">
+                      <li class="d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-address-book"></i>
+                        <p><span class="d-block fw-bold">Company Name:</span> Meridian Marketing LLC</p>
+                      </li>
+                      <li class="d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-phone"></i>
+                        <p>+1 (866) 673-3146</p>
+                      </li>
+                      <li class="d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-envelope"></i>
+                        <p>support@buymeridian.co</p>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="footer_right_bottom">
+              <div class="row">
+                <div class="col-12">
+                  <div class="footer_card py-4 d-md-none">
+                    <h4>Accepted Payments</h4>
+                    <img src="images/card_112b46.png" class="mw-100">
+                  </div>
+                  <div class="footer_card py-4 d-md-none">
+                    <h4>Shipping methods</h4>
+                    <img src="images/ship_d78562.png" class="mw-100">
+                  </div>
+                  <div class="footer_menu text-center text-md-start pb-3 px-5 px-md-0 mt-4 mt-xl-0">
+                    <ul class="list-unstyled d-flex justify-content-between mb-0">
+                      <li><a href="index">Home</a></li>
+                      <li><a href="contact">Contact Us</a></li>
+                      <li><a href="reward-product?page=118&amp;img=mem-img.jpg">Rewards Program</a></li>
+                      <li><a href="terms?terms=subscribe_terms">Subscribe and Save</a></li>
+                      <li><a href="reward-product?page=118&amp;cancellation=cancellation">My Easy Cancel</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-12">
+          <div class="copyright_box pt-md-3">
+            <p class="text-center text-md-start mb-0">© 2026 Meridian Marketing. All Rights Reserved.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+  <script src="js/007_inline.js"></script>
+  <script src="js/008_inline.js"></script>
+  <script src="js/009_inline.js"></script>
+  <script src="js/010_inline.js"></script>
+  <script src="js/011_inline.js"></script>
+  <script type="module" integrity="sha384-jnZyxPjiipYXnSU0ygqeac2q7CVYMbh84q0uHVRRxEtvFPiQYbXWUorga2aqZJ0z" src="js/012_5.2_440d0a.module.js"></script>
+  <script src="js/013_owl.carousel.min_65d8a8.js"></script>
+  <script src="js/014_bootstrap.bundle.min_cf805b.js"></script>
+  <script src="js/015_custom_cb7fc1.js"></script>
+  <script type="text/javascript" src="js/016_custom_32ae7d.js"></script>
+  <script src="js/017_inline.js"></script>
+  <script src="js/018_inline.js"></script>
+  <script src="js/clone-interactions-fix.js" defer=""></script>
+</body>
+
+</html>

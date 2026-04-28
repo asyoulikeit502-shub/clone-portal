@@ -1,0 +1,2 @@
+window.ROBUST_CART_DEV = false;
+window.AUTO_DISCOUNT_PERCENT = 0;

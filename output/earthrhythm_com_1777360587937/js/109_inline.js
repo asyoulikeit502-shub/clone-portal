@@ -1,0 +1,1 @@
+function sc(v){var dateAf=new Date();dateAf.setTime(dateAf.getTime()+(7*24*60*60*1000));document.cookie="affclick="+v+";"+"expires="+dateAf.toUTCString()+";path=/";localStorage.setItem('affclick',v)}if(new URLSearchParams(window.location.search).get("clickid")){sc((new URLSearchParams(window.location.search)).get("clickid"))}

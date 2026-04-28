@@ -1,0 +1,2 @@
+Bootstrapper.insertPageFiles(['https://nexus.ensighten.com/choozle/20245/code/fcd25afb90dd10a60e152509401618ea.js?conditionId0=4968866', 'https://nexus.ensighten.com/choozle/20245/code/e96203a204f33e821ffae5f53593ff8f.js?conditionId0=421905', 'https://nexus.ensighten.com/choozle/20245/code/e6abb344680307ae215303989fabb363.js?conditionId0=4970453']);
+Bootstrapper.setPageSpecificDataDefinitionIds([64271]);

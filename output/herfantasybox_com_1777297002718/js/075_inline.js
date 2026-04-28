@@ -1,0 +1,26 @@
+var OmegaTwitterPixelSettings = JSON.parse(JSON.stringify({
+  "id": "1825",
+  "shop": "her-fantasy-box.myshopify.com",
+  "enable": "1",
+  "plan": "3",
+  "active_plan_at": null,
+  "timezone": "UTC",
+  "statusFeedback": "1",
+  "lastUpdate": "2025-07-25 05:47:41",
+  "timeOnline": "",
+  "reasonDisable": "",
+  "reasonOtherDisable": "",
+  "DiscountCode": "",
+  "usePixelFromShopify": "0",
+  "PlanShopify": "shopify_plus",
+  "price": "15.99",
+  "list_delete_pixel_downgrade": null,
+  "enable_web_pixel": "2025-02-02 11:21:49.0",
+  "max_capi": "5",
+  "additional_capi_purchased": "0",
+  "webpixel_event_ic": "0",
+  "webpixel_event_atc": "0",
+  "is_use_pricing": "using",
+  "plan_id": "0"
+}));
+localStorage.setItem('ot_omega_twitter_pixel_setting', JSON.stringify(OmegaTwitterPixelSettings));

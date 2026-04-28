@@ -1,0 +1,1 @@
+document.documentElement.style.setProperty('--header-height', `${Math.round(document.getElementById('shopify-section-sections--19911933526060__header').clientHeight)}px`);

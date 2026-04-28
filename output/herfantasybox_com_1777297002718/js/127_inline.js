@@ -1,0 +1,1 @@
+const auto_discount_percent = 0;
