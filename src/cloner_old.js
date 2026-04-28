@@ -39,7 +39,23 @@
  *  ㉒ Tracker @import URL cleanup always runs (not gated on removeTrackers flag)
  *     since those assets are never downloaded anyway
  *
- * Platform-aware cleanup (v3):
+ * Platform-aware cleanup (v4 — classifier overhaul):
+ *  ㉙ importmap scripts removed globally (not just Shopify)
+ *  ㉚ Shopify shopify-features / live-API application/json scripts stripped
+ *  ㉛ Stray type="module" text nodes erased
+ *  ㉜ URL_FORCE_REMOVE list: Shopify cloud infra, payment CDNs, WP non-UI scripts
+ *     removed unconditionally without fetching content (fast path)
+ *  ㉝ URL_FORCE_KEEP list: named UI libraries (jQuery, Swiper, Bootstrap, etc.)
+ *     kept unconditionally, content scan skipped
+ *  ㉞ classifyScriptUrl() wires URL lists into the pipeline as a pre-content step
+ *  ㉟ classifyScriptContent() rewritten — remove-first with NARROW keep patterns
+ *     (specific library init calls only, no more DOMContentLoaded / addEventListener)
+ *     and BROAD remove patterns (all analytics SDKs, cart/checkout APIs, push SDKs)
+ *  ㊱ Heuristic: pure variable-assignment blocks with no call-sites are removed
+ *     as config dumps (catches platform-localisation objects, nonce blocks, etc.)
+ *  ㊲ Unresolvable external <script src> tags now removed instead of kept broken
+ *  ㊳ Tracker/third-party removal no longer gated on removeTrackers flag — always runs
+ *  ㊴ clone-interactions-fix.js massively expanded (tabs, drawers, dropdowns, dots)
  *  ㉓ detectPlatform() — fingerprints HTML to identify Shopify, WordPress, or generic
  *     site before any script decisions are made
  *  ㉔ SHOPIFY_USELESS_URL_PATTERNS — URL-based removal of Shopify-specific scripts
@@ -339,171 +355,280 @@ const WP_USELESS_URL_PATTERNS = [
 
 // ─── Content-based script classifier ─────────────────────────────────────
 /**
- * Patterns that, if found in JS source, mean the script MUST be kept.
- * These cover real UI interactions needed in a static clone.
+ * ── Script classification ────────────────────────────────────────────────
+ *
+ * NEW STRATEGY (v4):
+ *  OLD: keep-first → any keep-pattern match → keep (too permissive; broad patterns
+ *       like DOMContentLoaded / addEventListener matched almost everything)
+ *  NEW: URL-first fast-path, then content remove-first:
+ *       - URL_FORCE_REMOVE: skip content scan entirely → remove
+ *       - URL_FORCE_KEEP:   skip content scan entirely → keep
+ *       - Content KEEP patterns: NARROW, specific library init calls only
+ *       - Content REMOVE patterns: BROAD, any dead-weight signal → remove
+ *       - Heuristic: pure variable-assignment blocks with no call-sites → remove
+ *       - Unknown → keep (safe default, don't break unrecognised libraries)
  */
-const CONTENT_KEEP_PATTERNS = [
-  // Slider / carousel libraries
-  /\.slick\s*\(/, /Swiper\s*\(/, /owl\.carousel/, /\.flickity\s*\(/,
-  /glide\s*\.mount/, /splide\s*\.mount/, /tns\s*\(/, /new\s+Glider\s*\(/,
-  // Accordion / tabs / collapse
-  /accordion/i, /\.collapse\s*\(/, /tab\s*\(\s*['"]show['"]/, /toggle.*class/i,
-  // Mobile menu / nav
-  /classList\.(toggle|add|remove).*menu/i, /hamburger/i, /navbar.toggler/i,
-  /\.slideToggle/, /\.slideUp/, /\.slideDown/,
-  // Modal / lightbox / popup (visual only — not CRO popups)
-  /\.modal\s*\(/, /lightbox/i, /fancybox/i, /magnificPopup/i, /colorbox/i,
-  // Form validation / UX
-  /\.validate\s*\(/, /parsley\s*\.validate/, /formvalidat/i, /checkValidity/,
-  /invalid.*input/i,
-  // Animation / scroll effects
-  /AOS\.init/, /wow\.init/, /ScrollReveal/, /gsap\.(to|from|timeline)/,
-  /anime\s*\(/, /parallax/i, /\.animate\s*\(/, /IntersectionObserver/,
-  /lottie\.loadAnimation/,
-  // Counter / typed / other visual effects
-  /countUp/i, /\.typed\s*\(/, /isotope/i, /masonry/i, /\.imagesLoaded/,
-  // Lazy loading (needed so images appear)
-  /lazyload/i, /LazyLoad/, /lazysizes/,
-  // Video players (embedded, not tracker pixels)
-  /videojs/i, /plyr\s*\(/,
-  // Maps (static display)
-  /google\.maps/, /mapboxgl\s*\./,
-  // jQuery UI widgets
-  /\.datepicker\s*\(/, /\.autocomplete\s*\(/, /\.sortable\s*\(/,
-  // Bootstrap JS
-  /bootstrap.*bundle/, /Popper\s*\./,
-  // General DOM-manipulation jQuery patterns that drive UI
-  /\$\s*\(\s*document\s*\)\.ready/, /DOMContentLoaded/,
-  /addEventListener\s*\(\s*['"](?:click|submit|keyup|scroll|resize)/,
+
+/**
+ * URL-path signals that mean → REMOVE unconditionally (cheapest check, runs first).
+ */
+const URL_FORCE_REMOVE = [
+  // Shopify cloud infrastructure — never needed statically
+  /cdn\.shopify\.com\/shopifycloud\//i,
+  /shopify-marketing/i,
+  /consent-tracking/i,
+  /web-pixels-manager/i,
+  /shopify-autofill/i,
+  /monorail-edge/i,
+  /shopify\/assets\/storefront/i,
+  /shopify\/assets\/checkout/i,
+  // Generic tracker / payment CDNs not in TRACKER_PATTERNS
+  /cdn\.segment\.com/,
+  /cdn\.heapanalytics\.com/,
+  /d2yyd1h5u9mauk\.cloudfront\.net/,   // Heap alt CDN
+  /js\.stripe\.com\/v[0-9]/,           // Stripe checkout JS
+  /js\.braintreegateway\.com/,
+  /pay\.google\.com\/gp\/p\/js/,
+  /applepay\.cdn-apple\.com/,
+  /cdn\.jsdelivr\.net.*klaviyo/i,
+  // WP core non-UI scripts
+  /wp-includes\/js\/wp-(emoji|util|backbone|api)[^/]*\.js/i,
+  /wp-includes\/js\/dist\/(blocks|edit-|block-editor|block-library|api-fetch)/i,
+  /wp-includes\/js\/(heartbeat|admin-bar|wp-embed)[^/]*\.js/i,
 ];
 
 /**
- * Patterns that, if found in JS source AND no KEEP pattern matches,
- * mean the script is safe to remove.
+ * URL-path signals that mean → KEEP unconditionally (skip content scan).
+ * Only fires if URL_FORCE_REMOVE did NOT match.
+ */
+const URL_FORCE_KEEP = [
+  /jquery(\.min)?\.js/i,
+  /jquery\.migrate/i,
+  /bootstrap(\.bundle)?(\.min)?\.js/i,
+  /swiper(\.min)?\.js/i,
+  /slick(\.min)?\.js/i,
+  /owl\.carousel/i,
+  /splide(\.min)?\.js/i,
+  /glide(\.min)?\.js/i,
+  /flickity(\.min)?\.js/i,
+  /gsap(\.min)?\.js/i,
+  /lottie(\.min)?\.js/i,
+  /aos(\.min)?\.js/i,
+  /scrollreveal(\.min)?\.js/i,
+  /lazysizes(\.min)?\.js/i,
+  /fancybox(\.min)?\.js/i,
+  /magnific-popup(\.min)?\.js/i,
+  /select2(\.min)?\.js/i,
+  /isotope(\.min)?\.js/i,
+  /imagesloaded(\.min)?\.js/i,
+  /masonry(\.min)?\.js/i,
+  /anime(\.min)?\.js/i,
+  /photoswipe(\.min)?\.js/i,
+  /plyr(\.min)?\.js/i,
+  /video\.js/i,
+  /leaflet(\.min)?\.js/i,
+  /popper(\.min)?\.js/i,
+  /tippy(\.min)?\.js/i,
+  /glightbox(\.min)?\.js/i,
+  /typed(\.min)?\.js/i,
+  /countup(\.min)?\.js/i,
+  /vanilla-lazyload/i,
+  // Common theme entry-point filenames
+  /\/theme(\.min)?\.js/i,
+  /\/main(\.min)?\.js/i,
+  /\/app(\.min)?\.js/i,
+  /\/custom(\.min)?\.js/i,
+  /\/scripts?(\.min)?\.js/i,
+  /\/vendor(\.min)?\.js/i,
+];
+
+/**
+ * Classify a script by URL alone. Returns 'remove' | 'keep' | 'unknown'.
+ */
+function classifyScriptUrl(url) {
+  if (!url) return 'unknown';
+  if (URL_FORCE_REMOVE.some(p => p.test(url))) return 'remove';
+  if (URL_FORCE_KEEP.some(p => p.test(url))) return 'keep';
+  return 'unknown';
+}
+
+/**
+ * Patterns whose presence → KEEP (must be SPECIFIC library init calls).
+ * Deliberately excludes generic idioms like DOMContentLoaded, addEventListener,
+ * classList.toggle — those match virtually every script including trackers.
+ */
+const CONTENT_KEEP_PATTERNS = [
+  // Slider / carousel library inits
+  /\.slick\s*\(/, /new\s+Swiper\s*\(/, /Swiper\.use\s*\(/,
+  /owl\.carousel/, /\.flickity\s*\(/, /glide\.mount/,
+  /splide\.mount/, /new\s+Splide\s*\(/, /tns\s*\(/, /new\s+Glider\s*\(/, /new\s+Glide\s*\(/,
+  // Accordion / collapse — specific method signatures
+  /\.collapse\s*\(/, /tab\s*\(\s*['"]show['"]/, /\.accordion\s*\(/,
+  // Lightbox / modal init — specific library calls
+  /\.modal\s*\(/, /lightbox\.init/, /fancybox\.bind/, /magnificPopup/i,
+  /GLightbox\s*\(/, /PhotoSwipe\s*\(/, /basicLightbox\s*\(/,
+  // Animation library inits
+  /AOS\.init\s*\(/, /wow\.init\s*\(/, /ScrollReveal\s*\(\s*\)/,
+  /gsap\.(to|from|fromTo|timeline)\s*\(/, /anime\s*\(\s*\{/, /lottie\.loadAnimation\s*\(/,
+  // Counter / text effects
+  /new\s+CountUp\s*\(/, /\.typed\s*\(/, /new\s+Typed\s*\(/,
+  // Layout plugins
+  /new\s+Masonry\s*\(/, /\.isotope\s*\(/, /imagesLoaded\s*\(/,
+  // Lazy-load inits
+  /new\s+LazyLoad\s*\(/, /lazySizes\.init/, /lozad\s*\(/,
+  // Video players
+  /videojs\s*\(/, /new\s+Plyr\s*\(/, /Plyr\.setup\s*\(/,
+  // Maps
+  /new\s+google\.maps\.Map\s*\(/, /mapboxgl\.(Map|Marker)\s*\(/, /L\.map\s*\(/,
+  // Bootstrap component inits (specific, not just the word "bootstrap")
+  /bootstrap\.Tooltip/, /bootstrap\.Popover/, /bootstrap\.Carousel/,
+  /bootstrap\.Offcanvas/, /new\s+bootstrap\.\w+\s*\(/,
+  // jQuery UI and specific plugins
+  /\.datepicker\s*\(/, /\.autocomplete\s*\(/, /\.sortable\s*\(/, /\.draggable\s*\(/,
+  /\.select2\s*\(/, /\.chosen\s*\(/, /\.tooltip\s*\(/, /\.popover\s*\(/,
+  // Form validation libs
+  /\.validate\s*\(/, /parsley\.validate/, /new\s+Pristine\s*\(/, /new\s+JustValidate\s*\(/,
+  // Custom elements (Shopify Web Components)
+  /customElements\.define\s*\(/,
+];
+
+/**
+ * Patterns whose presence (when no keep-pattern matched) → REMOVE.
  */
 const CONTENT_REMOVE_PATTERNS = [
-  // Shopify storefront API / session
+  // Analytics & tracking calls
+  /gtag\s*\(/, /ga\s*\(\s*['"]send['"]/, /fbq\s*\(/, /hj\s*\(/,
+  /analytics\.(track|page|identify)\s*\(/,
+  /mixpanel\.(track|identify|init)\s*\(/,
+  /amplitude\.(getInstance|init|logEvent)/,
+  /heap\.(track|identify|addUserProperties)/,
+  /FS\.(identify|setUserVars)/, /LogRocket\.(init|identify)/,
+  /clarity\s*\(\s*['"]set['"]/, /DD_RUM\.init/, /Sentry\.init\s*\(/,
+  /window\.dataLayer\s*=/, /window\._mfq/, /window\.intercomSettings\s*=/,
+  // Shopify storefront / session / cart APIs
   /Shopify\.onReady/, /Shopify\.PaymentButton/, /Shopify\.OptionSelectors/,
   /Shopify\.Cart\.init/, /ShopifyBuy\.buildClient/, /ShopifyBuy\.UI\.onReady/,
   /shopify-buy\b/, /storefront-api/i,
-  /fetch\s*\(\s*['"`]\/cart\//,          // AJAX cart polling
-  /fetch\s*\(\s*['"`]\/checkouts?\//,
-  /XMLHttpRequest.*\/cart\//,
-  // Shopify analytics
+  /fetch\s*\(\s*[`'"](\/cart\/|\/checkouts?\/|\/account\/|\/search\.json)/,
+  /XMLHttpRequest.*\/cart\//, /ajax.*\/cart\.js/,
   /ShopifyAnalytics\.lib/, /window\.ShopifyAnalytics/,
-  /trekkie\.ready/, /Shopify\.cdnHost/,
-  // Klaviyo / Yotpo / review app init with no DOM effect
-  /klaviyo\.identify\s*\(/, /klaviyo\.track\s*\(/,
-  /window\._learnq\s*=/, /window\.yotpo\s*=/,
-  // WP REST / nonce / AJAX
-  /wp\.apiFetch/, /wpApiSettings/, /ajaxurl\s*=/, /admin-ajax\.php/,
-  /wc_cart_params/, /wc_checkout_params/, /woocommerce_params/,
-  // WP emoji (always useless in clone)
-  /wpEmojiSettings/, /addAction.*emoji/, /emoji\.min\.js/,
-  // Push notification SDKs
-  /OneSignal\.init/, /PushNotification\.init/, /ServiceWorkerRegistration/,
+  /trekkie\.(ready|track)/, /monorail-edge/,
+  // Shopify app SDKs
+  /klaviyo\.(identify|track|push)/, /window\._learnq\s*=/,
+  /window\.yotpo\s*=/, /window\.Stamped\s*=/, /window\.okendoSettings/,
+  /Recart\s*\./, /smile\.(init|ui)/, /SweetToothLoyalty/,
+  /window\.swell\s*=/, /window\.growave\s*=/, /window\.loox\s*=/,
+  // WordPress / WooCommerce APIs
+  /wp\.apiFetch/, /wpApiSettings/, /var\s+ajaxurl\s*=/, /admin-ajax\.php/,
+  /wc_cart_params/, /wc_checkout_params/, /woocommerce_params/, /wc_add_to_cart_params/,
+  /wpEmojiSettings/, /addAction.*emoji/,
+  /wp\.(customize|blocks|data|hooks)\b/,
+  /heartbeatSettings\s*=/, /wp-cron\.php/,
+  // Push / service worker
+  /OneSignal\.init/, /PushNotification\.init/,
   /navigator\.serviceWorker\.register/,
-  // Server-driven A/B / personalisation (no effect without live backend)
+  // A/B testing / personalisation
   /Optimizely\.push/, /window\.optimizely\s*=/, /VWO\s*=/, /_vwo_code/,
-  /ABTest\s*=/, /Monetate\s*\./,
-  // CMS live-preview / builder bridges
-  /shopify-section-rendering/, /Shopify\.designMode/,
-  /wp\.customize\b/, /wp\.blocks\b/, /wp\.data\b/, /wp\.hooks\b/,
-  // Loyalty / referral SDK inits
-  /smile\.init/, /SweetToothLoyalty/, /ReferralCandy\.init/,
-  // Affiliate / conversion tracking pixel inits
+  /Monetate\./, /ABTest\s*=/, /window\.crs\s*=.*experiment/i,
+  // Cookie consent SDKs
+  /CookieConsent\.run/, /Cookiebot\.(init|show)/, /klaro\.setup/,
+  /OneTrust\.(init|Init)/, /__cmp\s*\(/, /cookieyes\s*=/,
+  // Affiliate / conversion pixels
   /Impact\.init\s*\(/, /ShareASale\.init/, /CJ\.trackConversion/,
-  // Cookie consent framework inits (no UI value without live consent API)
-  /CookieConsent\.run/, /Cookiebot\.init/, /klaro\.setup/,
-  /OneTrust\.Init/, /__cmp\s*\(/,
+  /ReferralCandy\.init/, /PartnerStack\./,
+  // Builder / CMS live-preview bridges
+  /shopify-section-rendering/, /Shopify\.designMode/,
+  /Shogun\.ready/, /PageFly\.init/,
 ];
 
 /**
- * Classify downloaded JS content.
- * Returns: 'keep' | 'remove' | 'review'
+ * Classify downloaded JS content. Returns: 'keep' | 'remove'
  *
- * Strategy:
- *  1. If ANY keep-pattern matches → always keep (safety first)
- *  2. Else if ANY remove-pattern matches → remove
- *  3. Otherwise → keep (unknown = safe default)
+ * Strategy (v4 — remove-first after URL check):
+ *  1. Specific UI-library init pattern → keep
+ *  2. Dead-weight signal pattern → remove
+ *  3. Heuristic: no function calls + only assignments → remove (config dump)
+ *  4. Otherwise → keep (safe default)
  */
 function classifyScriptContent(code) {
-  if (!code || code.trim().length < 10) return 'remove'; // trivially empty
+  if (!code || code.trim().length < 10) return 'remove';
   for (const p of CONTENT_KEEP_PATTERNS) {
     if (p.test(code)) return 'keep';
   }
   for (const p of CONTENT_REMOVE_PATTERNS) {
     if (p.test(code)) return 'remove';
   }
-  return 'keep'; // unknown → keep (don't break things)
+  // Heuristic: pure config dump (only var/const/window assignments, no calls)
+  const stripped = code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '').trim();
+  const hasCallSite = /\b\w+\s*\(/.test(stripped);
+  const looksLikeConfigDump = /^\s*(var|let|const|window\.\w+)\s+\w+\s*=/.test(stripped);
+  if (!hasCallSite && looksLikeConfigDump && stripped.length < 5000) return 'remove';
+  return 'keep';
 }
 
 /**
- * Classify an inline <script> body.
- * Inline scripts are more likely to be config/init dumps, so we apply
- * additional Shopify/WP specific checks.
- * Returns: 'keep' | 'remove'
+ * Classify an inline <script> body. Returns: 'keep' | 'remove'
+ * Inline scripts are aggressively filtered — they are very commonly
+ * config dumps, nonce injections, and SDK init blocks.
  */
 function classifyInlineScript(code, platform) {
   if (!code || code.trim().length < 5) return 'remove';
 
-  // Always keep if a UI keep-pattern matches
   for (const p of CONTENT_KEEP_PATTERNS) {
     if (p.test(code)) return 'keep';
   }
 
-  // ── Shopify-specific inline removals ──────────────────────────────────
+  // Shopify-specific inline removals
   if (platform === 'shopify') {
     if (
-      /window\.Shopify\s*=\s*\{/.test(code) ||        // Shopify global config dump
-      /Shopify\.shop\s*=/.test(code) ||
-      /Shopify\.locale\s*=/.test(code) ||
-      /Shopify\.currency\s*=/.test(code) ||
-      /ShopifyAnalytics\.meta/.test(code) ||
-      /ShopifyAnalytics\.lib/.test(code) ||
+      /window\.Shopify\s*=\s*\{/.test(code) ||
+      /Shopify\.(shop|locale|currency|routes)\s*=/.test(code) ||
+      /ShopifyAnalytics\.(meta|lib)/.test(code) ||
       /window\.ShopifyAnalytics\s*=/.test(code) ||
-      /window\.__st\s*=/.test(code) ||                 // Shopify tracking object
+      /window\.__st\s*=/.test(code) ||
       /window\.meta\s*=\s*\{.*shop/.test(code) ||
       /trekkie\.config\s*=/.test(code) ||
       /monorail-edge\.shopifysvc\.com/.test(code) ||
-      // Shopify consent API init (useless statically)
-      /Shopify\.loadFeatures/.test(code) ||
-      /Shopify\.customerPrivacy/.test(code) ||
-      /__st\s*=\s*\{/.test(code)
+      /Shopify\.(loadFeatures|customerPrivacy)/.test(code) ||
+      /__st\s*=\s*\{/.test(code) ||
+      /window\.routes\s*=\s*\{/.test(code) ||
+      /window\.theme\s*=\s*\{[^}]*moneyFormat/.test(code) ||
+      /window\.themeVariables\s*=/.test(code) ||
+      /Shopify\.modules\s*=/.test(code)
     ) return 'remove';
   }
 
-  // ── WordPress-specific inline removals ────────────────────────────────
+  // WordPress-specific inline removals
   if (platform === 'wordpress') {
     if (
       /wpEmojiSettings\s*=/.test(code) ||
       /var\s+ajaxurl\s*=/.test(code) ||
-      /var\s+wc_\w+_params\s*=/.test(code) ||          // WooCommerce param objects
+      /var\s+wc_\w+_params\s*=/.test(code) ||
       /var\s+woocommerce_params\s*=/.test(code) ||
       /var\s+wpApiSettings\s*=/.test(code) ||
       /var\s+wp\s*=\s*\{["']apiRoot/.test(code) ||
-      // WP REST nonce injection (only useful with live PHP backend)
       /"nonce"\s*:\s*"[a-f0-9]+"/.test(code) ||
-      // WP admin bar colour/position overrides
       /#wpadminbar/.test(code) ||
-      // WP block editor data stores (useless in static)
       /wp\.data\.dispatch\s*\(/.test(code) ||
       /wp\.blocks\.registerBlockType/.test(code) ||
-      // WP cron trigger (pings wp-cron.php)
       /wp-cron\.php/.test(code) ||
-      // WP heartbeat config
       /heartbeatSettings\s*=/.test(code)
     ) return 'remove';
   }
 
-  // ── Generic remove patterns (platform-agnostic) ───────────────────────
+  // Generic remove patterns
   for (const p of CONTENT_REMOVE_PATTERNS) {
     if (p.test(code)) return 'remove';
   }
 
+  // Heuristic: pure config dump
+  const stripped = code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '').trim();
+  const hasCallSite = /\b\w+\s*\(/.test(stripped);
+  const looksLikeConfigDump = /^\s*(var|let|const|window\.\w+)\s+\w+\s*=/.test(stripped);
+  if (!hasCallSite && looksLikeConfigDump && stripped.length < 5000) return 'remove';
+
   return 'keep';
 }
-
 // Data attributes that are safe to strip after asset resolution
 const REMOVABLE_DATA_ATTRS = [
   // Lazy-load sources (already resolved into src/srcset)
@@ -750,6 +875,22 @@ function cleanupHtml($, removeTrackers, platform) {
     // Shopify section JSON scripts — served to theme editor, useless statically
     $('script[type="application/json"][data-section-type]').remove();
     $('script[type="application/json"][data-section-id]').remove();
+    // Shopify global config/features scripts — contain live accessToken, shopId, domain, etc.
+    $('script#shopify-features').remove();
+    $('script#shopify-app-init').remove();
+    $('script[id^="shopify-"][type="application/json"]').remove();
+    // importmap scripts — reference live CDN URLs with cache-busted hashes; dead statically
+    $('script[type="importmap"]').remove();
+    // Any remaining application/json scripts whose content references Shopify live APIs
+    $('script[type="application/json"]').each((_, el) => {
+      const content = $(el).html() || '';
+      if (
+        /accessToken/i.test(content) ||
+        /shopId/i.test(content) ||
+        /myshopify\.com/i.test(content) ||
+        /Shopify\.(shop|locale|currency)/i.test(content)
+      ) $(el).remove();
+    });
     // Shopify predictive search drawer (requires live Storefront API)
     $('[data-predictive-search]').remove();
     $('[id*="predictive-search"]').remove();
@@ -1121,12 +1262,29 @@ async function processPage({
     return `<script ${parts.join(' ')}></script>`;
   }
 
+  // Remove importmap scripts globally — they reference live CDN URLs with cache-busted version
+  // hashes that are never downloaded. Leaving them in causes browser errors in the static clone.
+  $('script[type="importmap"]').remove();
+
+  // Remove any stray bare text nodes between <script> tags that look like attribute fragments
+  // (e.g. a Liquid-rendered `type="module"` that ended up outside a tag). Cheerio surfaces these
+  // as text nodes on the parent; we strip ones that are pure attribute-like whitespace noise.
+  $('head, body').contents().each((_, node) => {
+    if (node.type === 'text') {
+      const text = (node.data || '').trim();
+      if (/^type\s*=\s*["'][^"']*["']$/.test(text) || /^type="module"\s*$/.test(text)) {
+        node.data = '';
+      }
+    }
+  });
+
   $('script').each((_, el) => {
     const $el = $(el);
     const rawType = (($el.attr('type') || '').toLowerCase()).trim();
     const isExecutable = !rawType || rawType === 'text/javascript' || rawType === 'application/javascript' || rawType === 'module';
 
-    // Keep JSON-LD, templates, import maps, etc. exactly as they are.
+    // Keep JSON-LD, templates, etc. exactly as they are.
+    // importmap already removed above.
     if (!isExecutable) return;
 
     const src = $el.attr('src');
@@ -1136,36 +1294,49 @@ async function processPage({
       const resolved = resolveUrl(src, baseOrigin, currentUrl);
 
       // ── URL-based removal ──────────────────────────────────────────────
-      // 1. Trackers / useless third-party (always applied when removeTrackers)
-      if (removeTrackers && (
-        TRACKER_PATTERNS.some(p => p.test(src)) ||
-        THIRD_PARTY_USELESS_PATTERNS.some(p => p.test(src)) ||
-        (resolved && (
-          TRACKER_PATTERNS.some(p => p.test(resolved)) ||
-          THIRD_PARTY_USELESS_PATTERNS.some(p => p.test(resolved))
-        ))
-      )) {
-        onProgress({ type: 'log', message: `🚫 Tracker: ${src.split('/').pop()}`, level: 'warn' });
+      // 1. Trackers / useless third-party — ALWAYS removed (not gated on removeTrackers flag).
+      const srcToTest = src || '';
+      const resolvedToTest = resolved || '';
+      if (
+        TRACKER_PATTERNS.some(p => p.test(srcToTest) || p.test(resolvedToTest)) ||
+        THIRD_PARTY_USELESS_PATTERNS.some(p => p.test(srcToTest) || p.test(resolvedToTest))
+      ) {
+        onProgress({ type: 'log', message: `🚫 Tracker/3rd-party: ${src.split('/').pop()}`, level: 'warn' });
         $el.remove();
         return;
       }
 
-      // 2. Platform-specific URL patterns (always applied — these scripts
-      //    are functionally broken without a live backend regardless of tracker flag)
-      if (platform === 'shopify' && SHOPIFY_USELESS_URL_PATTERNS.some(p => p.test(src || resolved || ''))) {
-        onProgress({ type: 'log', message: `🚫 Shopify app script: ${(src || '').split('/').pop()}`, level: 'warn' });
-        $el.remove();
-        return;
-      }
-      if (platform === 'wordpress' && WP_USELESS_URL_PATTERNS.some(p => p.test(src || resolved || ''))) {
-        onProgress({ type: 'log', message: `🚫 WP script: ${(src || '').split('/').pop()}`, level: 'warn' });
+      // 2. URL_FORCE_REMOVE patterns (Shopify cloud infra, WP non-UI, payment CDNs)
+      if (URL_FORCE_REMOVE.some(p => p.test(srcToTest) || p.test(resolvedToTest))) {
+        onProgress({ type: 'log', message: `🚫 URL-force-remove: ${src.split('/').pop()}`, level: 'warn' });
         $el.remove();
         return;
       }
 
-      // If the URL cannot be resolved, keep it instead of deleting it.
-      // A required CDN dependency is better left remote than broken.
-      if (!resolved) return;
+      // 3. Platform-specific URL patterns (always applied)
+      if (platform === 'shopify' && SHOPIFY_USELESS_URL_PATTERNS.some(p => p.test(srcToTest) || p.test(resolvedToTest))) {
+        onProgress({ type: 'log', message: `🚫 Shopify app script: ${src.split('/').pop()}`, level: 'warn' });
+        $el.remove();
+        return;
+      }
+      if (platform === 'wordpress' && WP_USELESS_URL_PATTERNS.some(p => p.test(srcToTest) || p.test(resolvedToTest))) {
+        onProgress({ type: 'log', message: `🚫 WP script: ${src.split('/').pop()}`, level: 'warn' });
+        $el.remove();
+        return;
+      }
+
+      // 4. URL_FORCE_KEEP — skip content scan, always download & keep
+      const urlVerdict = classifyScriptUrl(srcToTest || resolvedToTest);
+      if (urlVerdict === 'keep') {
+        // fall through to download below
+      }
+
+      // 5. Unresolvable external URL — remove the tag rather than leaving a broken reference
+      if (!resolved) {
+        onProgress({ type: 'log', message: `🚫 Unresolvable src removed: ${src.slice(-60)}`, level: 'warn' });
+        $el.remove();
+        return;
+      }
 
       const ext = rawType === 'module' ? '.module.js' : '.js';
       const filename = `${index}_${safeFilename(resolved).replace(/\.[^.]*$/, '')}${ext}`;
@@ -1178,10 +1349,13 @@ async function processPage({
         if (!code) return;
 
         // ── Content-based classification ───────────────────────────────
-        const verdict = classifyScriptContent(code);
-        if (verdict === 'remove') {
-          onProgress({ type: 'log', message: `🚫 Content-classified remove: ${filename}`, level: 'warn' });
-          return; // don't write the file; removeOrphanedScriptTags will clean the tag
+        // Skip content scan if URL already forced a keep decision
+        if (urlVerdict !== 'keep') {
+          const verdict = classifyScriptContent(code);
+          if (verdict === 'remove') {
+            onProgress({ type: 'log', message: `🚫 Content-classified remove: ${filename}`, level: 'warn' });
+            return; // don't write the file; removeOrphanedScriptTags will clean the tag
+          }
         }
 
         let finalCode = code;
@@ -1210,8 +1384,8 @@ async function processPage({
     if (!code) { $el.remove(); return; }
 
     // ── Inline script classification ────────────────────────────────────
-    // First: tracker pattern check (existing behaviour)
-    if (removeTrackers && TRACKER_INLINE_PATTERNS.some(p => p.test(code))) {
+    // First: tracker pattern check — always applied regardless of removeTrackers flag
+    if (TRACKER_INLINE_PATTERNS.some(p => p.test(code))) {
       onProgress({ type: 'log', message: `🚫 Inline tracker removed`, level: 'warn' });
       $el.remove();
       return;
@@ -1416,104 +1590,341 @@ body { overflow-y: auto; }
 (function () {
   'use strict';
 
+  /* ── Utilities ─────────────────────────────────────────────────────── */
   function ready(fn) {
     if (document.readyState !== 'loading') fn();
     else document.addEventListener('DOMContentLoaded', fn);
   }
 
-  function closest(el, selector) {
-    return el && el.closest ? el.closest(selector) : null;
-  }
+  function q(selector, scope) { return (scope || document).querySelector(selector); }
+  function qa(selector, scope) { return Array.from((scope || document).querySelectorAll(selector)); }
+  function cl(el) { return el ? el.classList : { toggle: function(){}, add: function(){}, remove: function(){}, contains: function(){ return false; } }; }
 
+  /* ── Preloader / scroll-lock removal ────────────────────────────────── */
   function unlockPageScroll() {
     var html = document.documentElement;
     var body = document.body;
     if (!body) return;
 
-    ['no-scroll','noscroll','overflow-hidden','modal-open','menu-open','loading','is-loading','preload','preloader-active'].forEach(function (cls) {
-      html.classList.remove(cls);
-      body.classList.remove(cls);
+    var lockClasses = ['no-scroll','noscroll','overflow-hidden','modal-open',
+      'menu-open','loading','is-loading','preload','preloader-active',
+      'js-nav-open','drawer-open','is-menu-open'];
+    lockClasses.forEach(function (cls) {
+      cl(html).remove(cls);
+      cl(body).remove(cls);
     });
 
     [html, body].forEach(function (el) {
-      var overflow = (el.style.overflow || '').toLowerCase();
-      var overflowY = (el.style.overflowY || '').toLowerCase();
-      if (overflow === 'hidden') el.style.overflow = 'auto';
-      if (overflowY === 'hidden') el.style.overflowY = 'auto';
+      var ov = (el.style.overflow || '').toLowerCase();
+      var ovy = (el.style.overflowY || '').toLowerCase();
+      if (ov === 'hidden') el.style.overflow = 'auto';
+      if (ovy === 'hidden') el.style.overflowY = 'auto';
       if (el.style.position === 'fixed' && (el === body || el === html)) el.style.position = '';
       if (el.style.height === '100vh') el.style.height = '';
+      if (el.style.top && el === body) el.style.top = '';
     });
 
-    document.querySelectorAll('.preloader, .preloader-wrapper, .page-loader, .loader, .loading-screen, #preloader, #loader').forEach(function (el) {
-      el.style.display = 'none';
-      el.style.opacity = '0';
-      el.style.visibility = 'hidden';
-      el.style.pointerEvents = 'none';
+    qa('.preloader, .preloader-wrapper, .page-loader, .loader, .loading-screen, #preloader, #loader, .site-preloader').forEach(function (el) {
+      el.style.cssText += ';display:none!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important';
     });
   }
 
+  /* ── Accordion / collapse ────────────────────────────────────────────── */
+  function handleCollapse(trigger) {
+    var selector = trigger.getAttribute('data-bs-target') ||
+                   trigger.getAttribute('data-target') ||
+                   trigger.getAttribute('aria-controls') && ('#' + trigger.getAttribute('aria-controls'));
+    // href="#id" style collapse triggers
+    if (!selector) {
+      var href = trigger.getAttribute('href') || '';
+      if (href.length > 1 && href.charAt(0) === '#') selector = href;
+    }
+    if (!selector || selector.length <= 1) return false;
+
+    var panel = q(selector);
+    if (!panel) return false;
+
+    var isCollapse = panel.classList.contains('collapse') ||
+                     panel.classList.contains('accordion-collapse') ||
+                     trigger.getAttribute('data-bs-toggle') === 'collapse' ||
+                     trigger.getAttribute('data-toggle') === 'collapse';
+    if (!isCollapse) return false;
+
+    panel.classList.toggle('show');
+    cl(trigger).toggle('collapsed');
+    trigger.setAttribute('aria-expanded', panel.classList.contains('show') ? 'true' : 'false');
+
+    // Animate height for smooth open/close
+    if (panel.classList.contains('show')) {
+      panel.style.height = '';
+      panel.style.display = 'block';
+      var h = panel.scrollHeight;
+      panel.style.height = '0';
+      panel.style.overflow = 'hidden';
+      panel.style.transition = 'height .3s ease';
+      requestAnimationFrame(function () { panel.style.height = h + 'px'; });
+      setTimeout(function () { panel.style.height = ''; panel.style.overflow = ''; panel.style.transition = ''; }, 320);
+    } else {
+      panel.style.height = panel.scrollHeight + 'px';
+      panel.style.overflow = 'hidden';
+      panel.style.transition = 'height .3s ease';
+      requestAnimationFrame(function () { panel.style.height = '0'; });
+      setTimeout(function () { panel.style.display = 'none'; panel.style.height = ''; panel.style.overflow = ''; panel.style.transition = ''; }, 320);
+    }
+    return true;
+  }
+
+  function handleAccordionButton(btn) {
+    var item = btn.closest('.accordion-item, .faq-item, .accordion, [class*="accordion"]') || btn.parentElement;
+    if (!item) return false;
+    var body = item.querySelector('.accordion-body, .accordion-content, .faq-answer, .accordion-panel, [class*="accordion-body"]');
+    if (!body && item.nextElementSibling) body = item.nextElementSibling;
+    if (!body) return false;
+
+    var open = btn.classList.contains('active') || btn.getAttribute('aria-expanded') === 'true';
+    cl(btn).toggle('active', !open);
+    btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+
+    if (open) {
+      body.style.height = body.scrollHeight + 'px';
+      body.style.overflow = 'hidden';
+      body.style.transition = 'height .3s ease';
+      requestAnimationFrame(function () { body.style.height = '0'; });
+      setTimeout(function () { cl(body).remove('show'); body.style.cssText = ''; }, 320);
+    } else {
+      body.style.display = 'block';
+      cl(body).add('show');
+      body.style.height = '0';
+      body.style.overflow = 'hidden';
+      body.style.transition = 'height .3s ease';
+      var h = body.scrollHeight;
+      requestAnimationFrame(function () { body.style.height = h + 'px'; });
+      setTimeout(function () { body.style.height = ''; body.style.overflow = ''; body.style.transition = ''; }, 320);
+    }
+    return true;
+  }
+
+  /* ── Navigation / Drawer / Mobile menu ─────────────────────────────── */
+  function handleNav(btn) {
+    // Shopify drawer pattern: data-drawer-toggle, aria-controls pointing to a <details> or panel
+    var drawerSelector = btn.getAttribute('data-drawer-toggle') ||
+                         btn.getAttribute('data-drawer') ||
+                         btn.getAttribute('aria-controls') && ('#' + btn.getAttribute('aria-controls'));
+    if (drawerSelector) {
+      var drawer = q(drawerSelector) || q('[id="' + drawerSelector.replace('#','') + '"]');
+      if (drawer) {
+        cl(drawer).toggle('active');
+        cl(drawer).toggle('is-active');
+        cl(drawer).toggle('drawer--is-open');
+        cl(document.body).toggle('drawer-open');
+        btn.setAttribute('aria-expanded', drawer.classList.contains('active') || drawer.classList.contains('is-active') ? 'true' : 'false');
+        return true;
+      }
+    }
+
+    // Standard mobile menu
+    var targetSelector = btn.getAttribute('data-bs-target') || btn.getAttribute('data-target') || btn.getAttribute('data-menu-toggle');
+    var menu = (targetSelector && q(targetSelector)) ||
+               q('.navbar-collapse, .mobile-menu, .nav-menu, .menu-drawer, [class*="mobile-nav"]');
+    if (menu) {
+      cl(menu).toggle('show');
+      cl(menu).toggle('active');
+      cl(menu).toggle('is-active');
+      cl(document.body).toggle('menu-open');
+      btn.setAttribute('aria-expanded', menu.classList.contains('show') || menu.classList.contains('active') ? 'true' : 'false');
+      return true;
+    }
+    return false;
+  }
+
+  /* ── Tabs ────────────────────────────────────────────────────────────── */
+  function handleTab(tab) {
+    // Bootstrap / custom tabs
+    var panelSel = tab.getAttribute('data-bs-target') || tab.getAttribute('data-target') || tab.getAttribute('href');
+    if (!panelSel || panelSel.charAt(0) !== '#') return false;
+    var panel = q(panelSel);
+    if (!panel) return false;
+
+    // Deactivate siblings
+    var list = tab.closest('[role="tablist"], .nav, .tabs, .tab-list, ul') || tab.parentElement.parentElement;
+    qa('[role="tab"], .nav-link, .tab-link, .tab-item > a, .tab-item > button', list).forEach(function (t) {
+      cl(t).remove('active');
+      t.setAttribute('aria-selected', 'false');
+    });
+    // Hide all panels in same tab container
+    var container = panel.parentElement;
+    qa('.tab-pane, .tab-panel, [role="tabpanel"]', container).forEach(function (p) {
+      cl(p).remove('show', 'active');
+      p.hidden = true;
+    });
+
+    cl(tab).add('active');
+    tab.setAttribute('aria-selected', 'true');
+    cl(panel).add('show', 'active');
+    panel.hidden = false;
+    return true;
+  }
+
+  /* ── Shopify <details> / summary disclosure pattern ──────────────────── */
+  // Shopify Dawn and many themes use <details>/<summary> for menus, drawers, filters
+  // These are native HTML — no JS needed — but cloner may have altered the markup.
+  // We ensure they work by reinitialising any custom attributes.
+  function patchDetailsElements() {
+    qa('details').forEach(function (det) {
+      // If it has data-disclosure or similar, wire up open class on parent
+      det.addEventListener('toggle', function () {
+        cl(det).toggle('is-open', det.open);
+        cl(det.parentElement).toggle('is-open', det.open);
+      });
+    });
+  }
+
+  /* ── Dropdown (hover / click) ─────────────────────────────────────────── */
+  function handleDropdown(btn) {
+    var menu = btn.nextElementSibling ||
+               q('.dropdown-menu, [class*="sub-menu"]', btn.parentElement);
+    if (!menu) return false;
+    var open = cl(menu).contains('show') || cl(menu).contains('active');
+    // Close all other open dropdowns first
+    qa('.dropdown-menu.show, [class*="sub-menu"].show').forEach(function (m) { cl(m).remove('show', 'active'); });
+    cl(menu).toggle('show', !open);
+    cl(menu).toggle('active', !open);
+    return true;
+  }
+
+  /* ── Slider (Slick / Swiper / Owl / generic) ─────────────────────────── */
+  function sliderMove(el, dir) {
+    // Walk up to find the slider root
+    var root = el.closest('.slick-slider, .swiper, .swiper-container, .swiper-wrapper, .owl-carousel, .splide, .glide, .slider, .carousel, [class*="slider"]');
+    if (!root) return false;
+
+    // For Swiper: call .slideNext() / .slidePrev() if available
+    if (root.swiper) {
+      dir > 0 ? root.swiper.slideNext() : root.swiper.slidePrev();
+      return true;
+    }
+    if (root._splide) {
+      dir > 0 ? root._splide.go('>') : root._splide.go('<');
+      return true;
+    }
+
+    // Generic CSS-transform approach
+    var track = root.querySelector('.slick-track, .swiper-wrapper, .owl-stage, .splide__list, .glide__slides, .slider-track, .carousel-inner, [class*="track"], [class*="wrapper"]') || root;
+    var slides = qa(':scope > *', track);
+    if (!slides.length) return false;
+
+    var current = parseInt(root.getAttribute('data-clone-slide') || '0', 10);
+    var visible = Math.round(root.offsetWidth / (slides[0].offsetWidth || root.offsetWidth));
+    visible = Math.max(1, visible);
+    var max = Math.max(0, slides.length - visible);
+    current = Math.max(0, Math.min(current + dir, max));
+    root.setAttribute('data-clone-slide', current);
+
+    track.style.transition = 'transform .45s ease';
+    track.style.transform = 'translateX(' + (-current * (100 / visible)) + '%)';
+    slides.forEach(function (s) { s.style.flex = '0 0 ' + (100 / visible) + '%'; });
+    track.style.display = 'flex';
+    return true;
+  }
+
+  /* ── Close overlays on Escape or outside click ───────────────────────── */
+  function bindGlobalDismiss() {
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      qa('.modal.show, .drawer.active, .drawer.is-active, [role="dialog"][aria-hidden="false"]').forEach(function (el) {
+        cl(el).remove('show', 'active', 'is-active');
+      });
+      unlockPageScroll();
+    });
+
+    document.addEventListener('click', function (e) {
+      // Close open dropdown menus when clicking outside
+      qa('.dropdown-menu.show, [class*="sub-menu"].show').forEach(function (menu) {
+        if (!menu.contains(e.target) && !(menu.previousElementSibling && menu.previousElementSibling.contains(e.target))) {
+          cl(menu).remove('show', 'active');
+        }
+      });
+    });
+  }
+
+  /* ── Main delegated click handler ───────────────────────────────────── */
   ready(function () {
     unlockPageScroll();
     setTimeout(unlockPageScroll, 300);
     setTimeout(unlockPageScroll, 1200);
 
+    patchDetailsElements();
+    bindGlobalDismiss();
+
     document.addEventListener('click', function (e) {
-      var toggle = closest(e.target, '[data-bs-toggle="collapse"], [data-toggle="collapse"], [data-target], [href^="#"]');
-      if (toggle) {
-        var selector = toggle.getAttribute('data-bs-target') || toggle.getAttribute('data-target') || toggle.getAttribute('href');
-        if (selector && selector.length > 1 && selector.charAt(0) === '#') {
-          var panel = document.querySelector(selector);
-          if (panel && (panel.classList.contains('collapse') || panel.classList.contains('accordion-collapse'))) {
-            e.preventDefault();
-            panel.classList.toggle('show');
-            toggle.classList.toggle('collapsed');
-            toggle.setAttribute('aria-expanded', panel.classList.contains('show') ? 'true' : 'false');
+      var t = e.target;
+
+      /* 1. Bootstrap / custom collapse */
+      var collapseBtn = t.closest('[data-bs-toggle="collapse"], [data-toggle="collapse"]');
+      if (collapseBtn) {
+        if (handleCollapse(collapseBtn)) { e.preventDefault(); return; }
+      }
+
+      /* 2. Accordion buttons (class-based, no data-bs-toggle) */
+      var accBtn = t.closest('.accordion-button, .accordion-title, .faq-question, .faq-title, [class*="accordion-btn"]');
+      if (accBtn && !collapseBtn) {
+        if (handleAccordionButton(accBtn)) { e.preventDefault(); return; }
+      }
+
+      /* 3. href="#id" anchors that target a collapse panel */
+      var anchor = t.closest('a[href^="#"]');
+      if (anchor) {
+        if (handleCollapse(anchor)) { e.preventDefault(); return; }
+        // Tab triggers via href
+        if (handleTab(anchor)) { e.preventDefault(); return; }
+      }
+
+      /* 4. Tabs */
+      var tabBtn = t.closest('[role="tab"], [data-bs-toggle="tab"], [data-toggle="tab"]');
+      if (tabBtn) {
+        if (handleTab(tabBtn)) { e.preventDefault(); return; }
+      }
+
+      /* 5. Mobile nav / drawer toggle */
+      var navBtn = t.closest('.navbar-toggler, .menu-toggle, .hamburger, .mobile-menu-toggle, [data-menu-toggle], [data-drawer-toggle], [class*="mobile-nav-toggle"]');
+      if (navBtn) {
+        if (handleNav(navBtn)) { e.preventDefault(); return; }
+      }
+
+      /* 6. Dropdown toggle */
+      var ddBtn = t.closest('[data-bs-toggle="dropdown"], [data-toggle="dropdown"], .dropdown-toggle');
+      if (ddBtn) {
+        if (handleDropdown(ddBtn)) { e.preventDefault(); return; }
+      }
+
+      /* 7. Slider previous / next */
+      var nextBtn = t.closest('.slick-next, .swiper-button-next, .owl-next, .splide__arrow--next, .glide__arrow--right, [data-slider-next], [aria-label*="next" i], [class*="slider-next"], [class*="carousel-next"]');
+      var prevBtn = t.closest('.slick-prev, .swiper-button-prev, .owl-prev, .splide__arrow--prev, .glide__arrow--left, [data-slider-prev], [aria-label*="prev" i], [class*="slider-prev"], [class*="carousel-prev"]');
+      if (nextBtn) { if (sliderMove(nextBtn, 1)) { e.preventDefault(); return; } }
+      if (prevBtn) { if (sliderMove(prevBtn, -1)) { e.preventDefault(); return; } }
+
+      /* 8. Slider dots / pagination */
+      var dot = t.closest('.slick-dots li, .swiper-pagination-bullet, .owl-dot, .splide__pagination__page, [class*="slider-dot"], [class*="carousel-dot"]');
+      if (dot) {
+        var list = dot.parentElement;
+        var idx  = Array.prototype.indexOf.call(list.children, dot);
+        var sliderRoot = dot.closest('.slick-slider, .swiper, .swiper-container, .owl-carousel, .splide, .slider, .carousel, [class*="slider"]');
+        if (sliderRoot) {
+          qa('li, button, .owl-dot', list).forEach(function (d) { cl(d).remove('active'); });
+          cl(dot).add('active');
+          if (sliderRoot.swiper) { sliderRoot.swiper.slideTo(idx); }
+          else {
+            var tr = sliderRoot.querySelector('.slick-track, .swiper-wrapper, .owl-stage, [class*="track"]') || sliderRoot;
+            var sl = qa(':scope > *', tr);
+            if (sl.length) {
+              sliderRoot.setAttribute('data-clone-slide', idx);
+              tr.style.transition = 'transform .45s ease';
+              tr.style.transform = 'translateX(' + (-idx * 100) + '%)';
+              sl.forEach(function (s) { s.style.flex = '0 0 100%'; });
+              tr.style.display = 'flex';
+            }
           }
-        }
-      }
-
-      var accBtn = closest(e.target, '.accordion-button, .accordion-title, .faq-question, .faq-title');
-      if (accBtn && !toggle) {
-        var item = closest(accBtn, '.accordion-item, .faq-item, .accordion') || accBtn.parentElement;
-        var body = item && (item.querySelector('.accordion-body, .accordion-content, .faq-answer, .collapse') || item.nextElementSibling);
-        if (body) {
           e.preventDefault();
-          accBtn.classList.toggle('active');
-          body.classList.toggle('show');
-          body.style.display = (body.classList.contains('show') || accBtn.classList.contains('active')) ? 'block' : '';
-        }
-      }
-
-      var menuBtn = closest(e.target, '.navbar-toggler, .menu-toggle, .hamburger, .mobile-menu-toggle, [data-menu-toggle]');
-      if (menuBtn) {
-        var targetSelector = menuBtn.getAttribute('data-bs-target') || menuBtn.getAttribute('data-target') || menuBtn.getAttribute('data-menu-toggle');
-        var menu = targetSelector ? document.querySelector(targetSelector) : null;
-        if (!menu) menu = document.querySelector('.navbar-collapse, .mobile-menu, .nav-menu, .menu');
-        if (menu) {
-          e.preventDefault();
-          menu.classList.toggle('show');
-          menu.classList.toggle('active');
-          document.body.classList.toggle('menu-open');
-        }
-      }
-
-      var next = closest(e.target, '.slick-next, .swiper-button-next, .owl-next, [data-slider-next]');
-      var prev = closest(e.target, '.slick-prev, .swiper-button-prev, .owl-prev, [data-slider-prev]');
-      if (next || prev) {
-        var slider = closest(e.target, '.slick-slider, .swiper, .swiper-container, .owl-carousel, .slider, .carousel');
-        if (slider) {
-          var track = slider.querySelector('.slick-track, .swiper-wrapper, .owl-stage, .slider-track, .carousel-inner') || slider;
-          var slides = track.children;
-          if (slides.length) {
-            e.preventDefault();
-            var current = parseInt(slider.getAttribute('data-clone-slide') || '0', 10);
-            current = next ? Math.min(current + 1, slides.length - 1) : Math.max(current - 1, 0);
-            slider.setAttribute('data-clone-slide', current);
-            track.style.transition = 'transform .45s ease';
-            track.style.transform = 'translateX(' + (-current * 100) + '%)';
-            Array.prototype.forEach.call(slides, function (slide) { slide.style.flex = '0 0 100%'; });
-            track.style.display = 'flex';
-          }
         }
       }
     }, true);
