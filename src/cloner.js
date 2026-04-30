@@ -1981,15 +1981,7 @@ async function clone({ url, outputDir, projectName, multiPage, minify, beautify:
   };
   if (chromePath) launchOptions.executablePath = chromePath;
 
-const browser = await puppeteer.launch({
-  headless: "new",
-  args: [
-    "--no-sandbox",
-    "--disable-setuid-sandbox",
-    "--disable-dev-shm-usage",
-    "--disable-gpu"
-  ]
-});
+  const browser = await puppeteer.launch(launchOptions);
 
   try {
     const baseUrl = new URL(url);
