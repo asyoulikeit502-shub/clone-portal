@@ -129,6 +129,7 @@ app.get('/stats/:projectName', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
 server.listen(PORT, () => {
-  console.log(`\n🚀 Website Cloner running at http://localhost:${PORT}\n`);
+  console.log(`Server running on port ${PORT}`);
 });
